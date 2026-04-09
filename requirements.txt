@@ -1,0 +1,8 @@
+streamlit>=1.42
+pandas>=2.2
+plotly>=5.20
+ydata-profiling>=4.9
+pydrive2>=1.19
+google-auth>=2.29
+google-auth-oauthlib>=1.2
+openpyxl>=3.1
