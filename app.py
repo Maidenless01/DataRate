@@ -46,7 +46,7 @@ from src.scoring import score_dataframe, score_image_dataset, ScoreResult
 # ── 1. Page Config ─────────────────────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="Data Cleanliness Checker",
+    page_title="DataRate — Data Cleanliness Checker",
     page_icon="🧹",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -57,36 +57,261 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap');
 
-        html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+        /* ── Global typography ── */
+        html, body, [class*="css"] {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
 
+        /* ── Hide Streamlit default header & footer ── */
+        #MainMenu { visibility: hidden; }
+        footer { visibility: hidden; }
+        header { visibility: hidden; }
+
+        /* ── Main app background ── */
+        .stApp {
+            background: linear-gradient(135deg, #0f0c29 0%, #1a1035 40%, #0f172a 100%);
+            min-height: 100vh;
+        }
+
+        /* ── Remove default block container padding top ── */
+        .block-container {
+            padding-top: 1.5rem !important;
+        }
+
+        /* ── Sidebar ── */
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #13111f 0%, #0f172a 100%);
+            border-right: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        [data-testid="stSidebar"] > div:first-child {
+            padding-top: 1.25rem;
+        }
         [data-testid="stSidebar"] h1 {
-            font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em;
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(90deg, #a78bfa, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        [data-testid="stSidebar"] .stCaption {
+            color: #64748b !important;
+            font-size: 0.78rem;
+        }
+        [data-testid="stSidebar"] hr {
+            border-color: rgba(99, 102, 241, 0.15) !important;
+        }
+
+        /* ── Radio button (data source toggle) ── */
+        [data-testid="stSidebar"] .stRadio label {
+            color: #94a3b8 !important;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        [data-testid="stSidebar"] .stRadio [data-testid="stWidgetLabel"] p {
+            color: #c4b5fd !important;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
 
         /* ── Metric cards ── */
         [data-testid="stMetric"] {
-            background: linear-gradient(135deg, #f8f9fa 0%, #eef2ff 100%);
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 14px 18px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            background: linear-gradient(135deg, rgba(30,27,75,0.9) 0%, rgba(15,23,42,0.95) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 16px;
+            padding: 18px 22px !important;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(99,102,241,0.08) inset;
+            backdrop-filter: blur(12px);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
-        [data-testid="stMetricLabel"] { font-weight: 600; color: #475569; }
-        [data-testid="stMetricValue"] { font-weight: 700; color: #1e293b; }
+        [data-testid="stMetric"]:hover {
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 8px 32px rgba(99,102,241,0.2), 0 0 0 1px rgba(99,102,241,0.12) inset;
+        }
+        [data-testid="stMetricLabel"] {
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #7c86a0 !important;
+        }
+        [data-testid="stMetricValue"] {
+            font-weight: 800;
+            font-size: 1.9rem !important;
+            color: #e2e8f0 !important;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+        [data-testid="stMetricDelta"] {
+            font-size: 0.78rem !important;
+            font-weight: 600;
+        }
 
-        /* ── Tab headers ── */
-        .stTabs [data-baseweb="tab"] { font-weight: 600; letter-spacing: 0.01em; }
-        .stTabs [data-baseweb="tab-list"] { border-bottom: 2px solid #e2e8f0; }
+        /* ── Tab bar ── */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 4px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 14px;
+            padding: 5px;
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-bottom: none !important;
+        }
+        .stTabs [data-baseweb="tab"] {
+            font-weight: 600;
+            font-size: 0.82rem;
+            letter-spacing: 0.01em;
+            border-radius: 10px;
+            color: #64748b;
+            padding: 8px 18px;
+            border: none !important;
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+        .stTabs [data-baseweb="tab"]:hover {
+            color: #a78bfa;
+            background: rgba(99, 102, 241, 0.08);
+        }
+        .stTabs [aria-selected="true"] {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+        .stTabs [data-baseweb="tab-panel"] {
+            padding-top: 1.5rem;
+        }
+        .stTabs [data-baseweb="tab-highlight"] {
+            display: none;
+        }
+
+        /* ── Section headings ── */
+        h1, h2, h3 {
+            color: #e2e8f0 !important;
+            letter-spacing: -0.02em;
+        }
+        h1 { font-weight: 800; }
+        h2 { font-weight: 700; }
+        h3 { font-weight: 700; font-size: 1.15rem !important; }
+        h4 { color: #94a3b8 !important; font-weight: 600; font-size: 0.9rem !important; text-transform: uppercase; letter-spacing: 0.06em; }
+
+        /* ── Divider ── */
+        hr {
+            border: none !important;
+            height: 1px !important;
+            background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent) !important;
+            margin: 1.25rem 0 !important;
+        }
+
+        /* ── Dataframe ── */
+        [data-testid="stDataFrame"] {
+            border-radius: 12px;
+            border: 1px solid rgba(99, 102, 241, 0.15) !important;
+            overflow: hidden;
+        }
+
+        /* ── Expander ── */
+        [data-testid="stExpander"] {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.15) !important;
+            border-radius: 12px !important;
+        }
+        [data-testid="stExpander"] summary {
+            color: #94a3b8 !important;
+            font-weight: 600;
+        }
+
+        /* ── Buttons ── */
+        .stButton > button {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white !important;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.55rem 1.25rem;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+            transition: all 0.2s ease;
+            letter-spacing: 0.01em;
+        }
+        .stButton > button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5);
+        }
+        .stButton > button:active {
+            transform: translateY(0);
+        }
+        .stButton > button:disabled {
+            background: rgba(30, 41, 59, 0.8) !important;
+            color: #475569 !important;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* ── Download button ── */
+        .stDownloadButton > button {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white !important;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.55rem 1.25rem;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+            transition: all 0.2s ease;
+        }
+        .stDownloadButton > button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5);
+        }
+
+        /* ── Info / Success / Warning / Error ── */
+        [data-testid="stAlert"] {
+            border-radius: 12px !important;
+            border: 1px solid;
+            font-size: 0.86rem;
+            font-weight: 500;
+        }
+        .stSuccess { border-color: rgba(16,185,129,0.3) !important; background: rgba(16,185,129,0.07) !important; }
+        .stWarning { border-color: rgba(245,158,11,0.3) !important; background: rgba(245,158,11,0.07) !important; }
+        .stError   { border-color: rgba(239,68,68,0.3)  !important; background: rgba(239,68,68,0.07)  !important; }
+        .stInfo    { border-color: rgba(99,102,241,0.3) !important; background: rgba(99,102,241,0.07) !important; }
+
+        /* ── Spinner ── */
+        [data-testid="stSpinner"] { color: #a78bfa !important; }
+
+        /* ── Sidebar checkbox & selectbox ── */
+        [data-testid="stSidebar"] .stCheckbox label { color: #94a3b8 !important; font-size: 0.84rem; }
+        [data-testid="stSidebar"] .stSelectbox [data-testid="stWidgetLabel"] p {
+            color: #94a3b8 !important; font-size: 0.8rem;
+        }
 
         /* ── Section card ── */
         .section-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 20px 24px;
-            margin-bottom: 16px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 16px;
+            padding: 22px 26px;
+            margin-bottom: 18px;
+            backdrop-filter: blur(8px);
+        }
+
+        /* ── Dataset header pill ── */
+        .dataset-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 100px;
+            padding: 5px 14px 5px 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #a78bfa;
+            margin-bottom: 1rem;
         }
 
         /* ── Grade badge ── */
@@ -106,18 +331,30 @@ st.markdown(
         /* ── Image thumbnail grid ── */
         .thumb-grid { display: flex; flex-wrap: wrap; gap: 8px; }
         .thumb-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 10px;
             overflow: hidden;
-            background: #f8fafc;
+            background: rgba(15, 23, 42, 0.8);
             text-align: center;
             padding: 4px;
             font-size: 0.7rem;
             color: #64748b;
         }
 
-        /* ── Quick-clean buttons ── */
+        /* ── Quick-clean buttons full-width ── */
         div[data-testid="stHorizontalBlock"] .stButton > button { width: 100%; }
+
+        /* ── Welcome page feature list ── */
+        .feature-card {
+            background: rgba(99, 102, 241, 0.06);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 14px;
+            padding: 18px 22px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s ease;
+        }
+        .feature-card:hover { border-color: rgba(139, 92, 246, 0.4); }
+        .feature-card p { color: #94a3b8; margin: 0; font-size: 0.9rem; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -144,7 +381,7 @@ for _k, _v in _DEFAULTS.items():
 # ── 4. Sidebar ─────────────────────────────────────────────────────────────────
 
 with st.sidebar:
-    st.title("🧹 Data Cleanliness Checker")
+    st.title("🧹 DataRate")
     st.caption("Upload CSV, image files or ZIPs and inspect their cleanliness.")
     st.divider()
 
@@ -170,20 +407,42 @@ with st.sidebar:
 dataset, active_name = get_active_dataset()
 
 if dataset is None:
-    st.markdown("## 👋 Welcome to Data Cleanliness Checker")
+    # ── Welcome screen ──────────────────────────────────────────────────────
     st.markdown(
         """
-        Get an instant quality report on any dataset:
+        <div style='padding: 2rem 0 1rem 0;'>
+            <h1 style='font-size:2.6rem; font-weight:800; background: linear-gradient(90deg,#a78bfa,#818cf8,#6ee7b7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:0.4rem;'>
+                Data Cleanliness Checker
+            </h1>
+            <p style='color:#64748b; font-size:1.05rem; margin-top:0;'>Instant data quality insights — for CSV datasets and image collections.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-        - 📂 **Upload** a local `.csv`, `.zip`, or image file using the sidebar
-        - 🌐 **Browse** your Google Drive and load a CSV with one click
-        - 🖼️ **Image datasets** — upload a ZIP of images (subfolders = class labels)
-        - 📊 View **Overview**, **Missing Values**, **Duplicates** tabs
-        - 🏆 Get a **Cleanliness Score** (0–100) with grade A–F
-        - ✨ **Quick-clean** and **download** — changes persist within your session
+    c1, c2 = st.columns(2, gap="large")
+    features = [
+        ("📂", "Local Upload", "Upload `.csv`, `.zip`, or image files directly from your machine."),
+        ("🌐", "Google Drive", "Browse your Drive folders and load a CSV with one click."),
+        ("🖼️", "Image Datasets", "Upload a ZIP of images — subfolders become class labels."),
+        ("📊", "6 Analysis Tabs", "Overview, Missing Values, Duplicates, Full Report, Score & Quick Clean."),
+        ("🏆", "Cleanliness Score", "Get a score from 0–100 with grade A–F across all quality checks."),
+        ("✨", "Quick Clean", "Deduplicate & impute missing values, then download the cleaned file."),
+    ]
+    for i, (icon, title, desc) in enumerate(features):
+        col = c1 if i % 2 == 0 else c2
+        col.markdown(
+            f"""<div class='feature-card'>
+                <p style='font-size:1.5rem; margin-bottom:4px;'>{icon}</p>
+                <p style='color:#e2e8f0; font-weight:700; font-size:0.95rem; margin-bottom:4px;'>{title}</p>
+                <p>{desc}</p>
+            </div>""",
+            unsafe_allow_html=True,
+        )
 
-        _Use the sidebar on the left to get started._
-        """
+    st.markdown(
+        "<p style='color:#475569; font-size:0.85rem; margin-top:1rem;'>👈 Use the sidebar on the left to get started.</p>",
+        unsafe_allow_html=True,
     )
     st.stop()
 
@@ -205,7 +464,11 @@ if isinstance(dataset, pd.DataFrame):
     # TABULAR ANALYSIS
     # ════════════════════════════════════════════════════════════════════════
 
-    st.markdown(f"## 📊 Analysing: `{active_name}`")
+    st.markdown(
+        f"<div class='dataset-pill'>📊 &nbsp;<span style='color:#e2e8f0;'>{active_name}</span></div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(f"## Analysing Dataset")
 
     tab_overview, tab_missing, tab_duplicates, tab_report, tab_score, tab_clean = st.tabs(
         ["🗂️ Overview", "❓ Missing Values", "👥 Duplicates",
@@ -289,7 +552,8 @@ if isinstance(dataset, pd.DataFrame):
                 chart_df = summary_df[summary_df["Missing Count"] > 0].copy()
                 fig = px.bar(
                     chart_df, x="Column", y="Missing %",
-                    color="Missing %", color_continuous_scale="Reds",
+                    color="Missing %",
+                    color_continuous_scale=["#312e81", "#6366f1", "#a78bfa", "#c4b5fd"],
                     title="Missing Value Rate by Column",
                     text="Missing %", hover_data={"Missing Count": True},
                 )
@@ -298,9 +562,11 @@ if isinstance(dataset, pd.DataFrame):
                 fig.update_layout(
                     coloraxis_showscale=False, height=420,
                     plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                    xaxis=dict(tickangle=-35),
-                    yaxis=dict(title="Missing %", gridcolor="#e2e8f0"),
-                    title_font_size=14, margin=dict(t=50, b=60),
+                    font=dict(color="#94a3b8", family="Inter"),
+                    xaxis=dict(tickangle=-35, gridcolor="rgba(99,102,241,0.08)", color="#64748b"),
+                    yaxis=dict(title="Missing %", gridcolor="rgba(99,102,241,0.08)", color="#64748b"),
+                    title_font_size=14, title_font_color="#e2e8f0",
+                    margin=dict(t=50, b=60),
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -362,6 +628,12 @@ if isinstance(dataset, pd.DataFrame):
             num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
             cat_cols = df.select_dtypes(include="object").columns.tolist()
 
+            _PLOTLY_COMMON = dict(
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="#94a3b8", family="Inter"),
+            )
+
             # ── Numeric distributions ────────────────────────────────────────
             if num_cols:
                 st.markdown("#### 📈 Numeric Column Distributions")
@@ -382,11 +654,10 @@ if isinstance(dataset, pd.DataFrame):
                             fig.update_layout(
                                 height=260, showlegend=False,
                                 margin=dict(t=40, b=20, l=20, r=10),
-                                plot_bgcolor="rgba(0,0,0,0)",
-                                paper_bgcolor="rgba(0,0,0,0)",
-                                xaxis=dict(title=""),
-                                yaxis=dict(title="Count", gridcolor="#e2e8f0"),
-                                title_font_size=12,
+                                xaxis=dict(title="", gridcolor="rgba(99,102,241,0.08)", color="#64748b"),
+                                yaxis=dict(title="Count", gridcolor="rgba(99,102,241,0.08)", color="#64748b"),
+                                title_font_size=12, title_font_color="#e2e8f0",
+                                **_PLOTLY_COMMON,
                             )
                             st.plotly_chart(fig, use_container_width=True)
 
@@ -405,8 +676,8 @@ if isinstance(dataset, pd.DataFrame):
                 fig_corr.update_layout(
                     height=max(350, len(num_cols) * 45),
                     margin=dict(t=50, b=20, l=20, r=20),
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    paper_bgcolor="rgba(0,0,0,0)",
+                    title_font_color="#e2e8f0",
+                    **_PLOTLY_COMMON,
                 )
                 st.plotly_chart(fig_corr, use_container_width=True)
 
@@ -419,18 +690,18 @@ if isinstance(dataset, pd.DataFrame):
                     fig_cat = px.bar(
                         vc, x="Count", y="Value", orientation="h",
                         title=f"{col_name} — top {len(vc)} values",
-                        color="Count", color_continuous_scale="Blues",
+                        color="Count",
+                        color_continuous_scale=["#312e81", "#6366f1", "#a78bfa"],
                     )
                     fig_cat.update_layout(
                         height=max(250, len(vc) * 28),
                         showlegend=False,
                         coloraxis_showscale=False,
                         margin=dict(t=40, b=20, l=120, r=20),
-                        plot_bgcolor="rgba(0,0,0,0)",
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        xaxis=dict(gridcolor="#e2e8f0"),
-                        yaxis=dict(autorange="reversed"),
-                        title_font_size=13,
+                        xaxis=dict(gridcolor="rgba(99,102,241,0.08)", color="#64748b"),
+                        yaxis=dict(autorange="reversed", color="#64748b"),
+                        title_font_size=13, title_font_color="#e2e8f0",
+                        **_PLOTLY_COMMON,
                     )
                     st.plotly_chart(fig_cat, use_container_width=True)
 
@@ -465,19 +736,19 @@ if isinstance(dataset, pd.DataFrame):
             title={"text": f"Cleanliness Score<br><span style='font-size:0.9em;color:{result.color}'>"
                            f"Grade {result.grade}</span>"},
             gauge={
-                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#64748b"},
+                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#475569"},
                 "bar": {"color": result.color, "thickness": 0.25},
-                "bgcolor": "#f1f5f9",
+                "bgcolor": "rgba(15,23,42,0.6)",
                 "borderwidth": 0,
                 "steps": [
-                    {"range": [0, 40],  "color": "#fee2e2"},
-                    {"range": [40, 60], "color": "#fef3c7"},
-                    {"range": [60, 75], "color": "#fef9c3"},
-                    {"range": [75, 90], "color": "#dcfce7"},
-                    {"range": [90, 100],"color": "#d1fae5"},
+                    {"range": [0, 40],   "color": "rgba(239,68,68,0.12)"},
+                    {"range": [40, 60],  "color": "rgba(245,158,11,0.12)"},
+                    {"range": [60, 75],  "color": "rgba(234,179,8,0.12)"},
+                    {"range": [75, 90],  "color": "rgba(34,197,94,0.12)"},
+                    {"range": [90, 100], "color": "rgba(16,185,129,0.12)"},
                 ],
                 "threshold": {
-                    "line": {"color": "#1e293b", "width": 3},
+                    "line": {"color": "#e2e8f0", "width": 3},
                     "thickness": 0.8,
                     "value": result.score,
                 },
@@ -488,7 +759,7 @@ if isinstance(dataset, pd.DataFrame):
             height=320,
             margin=dict(t=60, b=10, l=30, r=30),
             paper_bgcolor="rgba(0,0,0,0)",
-            font={"family": "Inter"},
+            font={"family": "Inter", "color": "#94a3b8"},
         )
         st.plotly_chart(fig_gauge, use_container_width=True)
 
@@ -518,10 +789,10 @@ if isinstance(dataset, pd.DataFrame):
              ("C", "#f59e0b", "60–74"), ("D", "#f97316", "40–59"), ("F", "#ef4444", "< 40")]
         ):
             col_ui.markdown(
-                f"<div style='text-align:center;padding:12px;border-radius:10px;"
-                f"background:{color}22;border:2px solid {color}'>"
-                f"<div style='font-size:2rem;font-weight:800;color:{color}'>{grade}</div>"
-                f"<div style='font-size:0.8rem;color:#475569'>{label}</div></div>",
+                f"<div style='text-align:center;padding:16px 12px;border-radius:14px;"
+                f"background:{color}14;border:1.5px solid {color}40;'>"
+                f"<div style='font-size:2.2rem;font-weight:800;color:{color};'>{grade}</div>"
+                f"<div style='font-size:0.78rem;color:#64748b;font-weight:600;margin-top:4px;'>{label}</div></div>",
                 unsafe_allow_html=True,
             )
 
@@ -661,7 +932,11 @@ elif isinstance(dataset, ImageDataset):
     # IMAGE ANALYSIS
     # ════════════════════════════════════════════════════════════════════════
 
-    st.markdown(f"## 🖼️ Analysing Image Dataset: `{active_name}`")
+    st.markdown(
+        f"<div class='dataset-pill'>🖼️ &nbsp;<span style='color:#e2e8f0;'>{active_name}</span></div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("## Analysing Image Dataset")
 
     itab_overview, itab_quality, itab_dups, itab_score, itab_fix = st.tabs(
         ["🖼️ Overview", "🔍 Quality Issues", "👥 Duplicates",
@@ -678,6 +953,12 @@ elif isinstance(dataset, ImageDataset):
         thumb.thumbnail((size, size))
         thumb.save(buf, format="JPEG", quality=70)
         return base64.b64encode(buf.getvalue()).decode()
+
+    _PLOTLY_DARK = dict(
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#94a3b8", family="Inter"),
+    )
 
     # ╔═══════════════════════════════════════════════════════════════════════╗
     # ║  IMAGE TAB 1 — OVERVIEW                                             ║
@@ -714,16 +995,18 @@ elif isinstance(dataset, ImageDataset):
             ).sort_values("Count", ascending=False)
             fig_cls = px.bar(
                 label_df, x="Class", y="Count",
-                color="Count", color_continuous_scale="Viridis",
+                color="Count",
+                color_continuous_scale=["#312e81", "#6366f1", "#a78bfa"],
                 title="Images per Class",
                 text="Count",
             )
             fig_cls.update_traces(textposition="outside", marker_line_width=0)
             fig_cls.update_layout(
                 height=380, coloraxis_showscale=False,
-                plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                xaxis=dict(tickangle=-30), yaxis=dict(gridcolor="#e2e8f0"),
-                margin=dict(t=50, b=60), title_font_size=14,
+                xaxis=dict(tickangle=-30, gridcolor="rgba(99,102,241,0.08)", color="#64748b"),
+                yaxis=dict(gridcolor="rgba(99,102,241,0.08)", color="#64748b"),
+                margin=dict(t=50, b=60), title_font_size=14, title_font_color="#e2e8f0",
+                **_PLOTLY_DARK,
             )
             st.plotly_chart(fig_cls, use_container_width=True)
 
@@ -738,14 +1021,15 @@ elif isinstance(dataset, ImageDataset):
             })
             fig_res = px.scatter(
                 res_df, x="Width", y="Height", color="Label",
-                hover_data=["Name"], opacity=0.6,
+                hover_data=["Name"], opacity=0.7,
                 title="Image Resolutions (W × H)",
             )
             fig_res.update_layout(
                 height=380,
-                plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-                xaxis=dict(gridcolor="#e2e8f0"), yaxis=dict(gridcolor="#e2e8f0"),
-                margin=dict(t=50, b=40), title_font_size=14,
+                xaxis=dict(gridcolor="rgba(99,102,241,0.08)", color="#64748b"),
+                yaxis=dict(gridcolor="rgba(99,102,241,0.08)", color="#64748b"),
+                margin=dict(t=50, b=40), title_font_size=14, title_font_color="#e2e8f0",
+                **_PLOTLY_DARK,
             )
             st.plotly_chart(fig_res, use_container_width=True)
 
@@ -765,10 +1049,11 @@ elif isinstance(dataset, ImageDataset):
                         b64 = _thumb_b64(img_entry, 150)
                         if b64:
                             st.markdown(
-                                f"<div style='text-align:center'>"
+                                f"<div style='text-align:center;background:rgba(15,23,42,0.8);"
+                                f"border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:6px;'>"
                                 f"<img src='data:image/jpeg;base64,{b64}' "
-                                f"style='width:100%;border-radius:6px;border:1px solid #e2e8f0'/>"
-                                f"<div style='font-size:0.65rem;color:#64748b;margin-top:3px'>"
+                                f"style='width:100%;border-radius:6px;'/>"
+                                f"<div style='font-size:0.65rem;color:#64748b;margin-top:5px;'>"
                                 f"{img_entry.name[:18]}<br>{img_entry.width}×{img_entry.height}"
                                 f"</div></div>",
                                 unsafe_allow_html=True,
@@ -822,7 +1107,6 @@ elif isinstance(dataset, ImageDataset):
                 pass
         if blank_imgs:
             st.warning(f"Found **{len(blank_imgs)}** near-blank image(s).")
-            # Show thumbnails
             cols_ui = st.columns(min(5, len(blank_imgs)))
             for col_ui, img_entry in zip(cols_ui, blank_imgs[:10]):
                 with col_ui:
@@ -830,7 +1114,7 @@ elif isinstance(dataset, ImageDataset):
                     if b64:
                         st.markdown(
                             f"<img src='data:image/jpeg;base64,{b64}' "
-                            f"style='width:100%;border-radius:6px;border:2px solid #f59e0b'/>",
+                            f"style='width:100%;border-radius:8px;border:2px solid #f59e0b;'/>",
                             unsafe_allow_html=True,
                         )
                         st.caption(img_entry.name[:20])
@@ -877,8 +1161,8 @@ elif isinstance(dataset, ImageDataset):
                             if b64:
                                 st.markdown(
                                     f"<img src='data:image/jpeg;base64,{b64}' "
-                                    f"style='width:100%;border-radius:6px;"
-                                    f"border:2px solid #ef4444'/>",
+                                    f"style='width:100%;border-radius:8px;"
+                                    f"border:2px solid #ef4444;'/>",
                                     unsafe_allow_html=True,
                                 )
                                 st.caption(img_entry.name[:22])
@@ -909,19 +1193,19 @@ elif isinstance(dataset, ImageDataset):
                 )
             },
             gauge={
-                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#64748b"},
+                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#475569"},
                 "bar": {"color": img_result.color, "thickness": 0.25},
-                "bgcolor": "#f1f5f9",
+                "bgcolor": "rgba(15,23,42,0.6)",
                 "borderwidth": 0,
                 "steps": [
-                    {"range": [0, 40],   "color": "#fee2e2"},
-                    {"range": [40, 60],  "color": "#fef3c7"},
-                    {"range": [60, 75],  "color": "#fef9c3"},
-                    {"range": [75, 90],  "color": "#dcfce7"},
-                    {"range": [90, 100], "color": "#d1fae5"},
+                    {"range": [0, 40],   "color": "rgba(239,68,68,0.12)"},
+                    {"range": [40, 60],  "color": "rgba(245,158,11,0.12)"},
+                    {"range": [60, 75],  "color": "rgba(234,179,8,0.12)"},
+                    {"range": [75, 90],  "color": "rgba(34,197,94,0.12)"},
+                    {"range": [90, 100], "color": "rgba(16,185,129,0.12)"},
                 ],
                 "threshold": {
-                    "line": {"color": "#1e293b", "width": 3},
+                    "line": {"color": "#e2e8f0", "width": 3},
                     "thickness": 0.8,
                     "value": img_result.score,
                 },
@@ -930,7 +1214,7 @@ elif isinstance(dataset, ImageDataset):
         ))
         fig_gauge.update_layout(
             height=320, margin=dict(t=60, b=10, l=30, r=30),
-            paper_bgcolor="rgba(0,0,0,0)", font={"family": "Inter"},
+            paper_bgcolor="rgba(0,0,0,0)", font={"family": "Inter", "color": "#94a3b8"},
         )
         st.plotly_chart(fig_gauge, use_container_width=True)
 
@@ -957,10 +1241,10 @@ elif isinstance(dataset, ImageDataset):
              ("C", "#f59e0b", "60–74"), ("D", "#f97316", "40–59"), ("F", "#ef4444", "< 40")]
         ):
             col_ui.markdown(
-                f"<div style='text-align:center;padding:12px;border-radius:10px;"
-                f"background:{color}22;border:2px solid {color}'>"
-                f"<div style='font-size:2rem;font-weight:800;color:{color}'>{grade}</div>"
-                f"<div style='font-size:0.8rem;color:#475569'>{label}</div></div>",
+                f"<div style='text-align:center;padding:16px 12px;border-radius:14px;"
+                f"background:{color}14;border:1.5px solid {color}40;'>"
+                f"<div style='font-size:2.2rem;font-weight:800;color:{color};'>{grade}</div>"
+                f"<div style='font-size:0.78rem;color:#64748b;font-weight:600;margin-top:4px;'>{label}</div></div>",
                 unsafe_allow_html=True,
             )
 
