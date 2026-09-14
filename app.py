@@ -67,7 +67,11 @@ st.markdown(
         /* ── Hide Streamlit default header & footer ── */
         #MainMenu { visibility: hidden; }
         footer { visibility: hidden; }
-        header { visibility: hidden; }
+        [data-testid="stHeader"] { background: transparent; }
+        [data-testid="stToolbar"] [data-testid="stMainMenu"],
+        [data-testid="stToolbar"] a[data-testid="stStatusWidget"],
+        [data-testid="stAppDeployButton"],
+        [data-testid="stToolbarActions"] { visibility: hidden; }
 
         /* ── Main app background ── */
         .stApp {

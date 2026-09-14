@@ -111,6 +111,7 @@ To enable the Google Drive browser, follow these one-time steps:
 
 1. Download the `client_secrets.json` file
 2. Place it in the **project root** (same folder as `app.py`)
+3. Make sure the deployed environment also has access to that file; otherwise Google Drive login will fail with a missing-file error.
 
 ```
 DataRate/
@@ -193,6 +194,7 @@ Use the full path to the venv's streamlit:
 - Make sure `client_secrets.json` is in the project root
 - Ensure the **Google Drive API** is enabled in your Cloud project
 - Check that your Google account is added as a test user in the OAuth consent screen
+- If the error says `client_secrets.json is missing`, the app cannot find the OAuth file in the deployed or local working directory.
 
 ---
 

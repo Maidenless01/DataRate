@@ -14,6 +14,7 @@ Setup:
 """
 
 import io
+from pathlib import Path
 from pathlib import PurePosixPath
 
 import pandas as pd
@@ -32,6 +33,7 @@ except ImportError:
 _MIME_FOLDER = "application/vnd.google-apps.folder"
 _MIME_CSV = "text/csv"
 _CREDS_FILE = "mycreds.txt"
+_CLIENT_SECRETS_FILE = Path("client_secrets.json")
 
 
 # ── Auth ───────────────────────────────────────────────────────────────────────
@@ -41,6 +43,13 @@ def _authenticate() -> tuple:
     Perform OAuth2 authentication using PyDrive2's LocalWebserverAuth.
     Returns (GoogleAuth, GoogleDrive) and caches them in session state.
     """
+    if not _CLIENT_SECRETS_FILE.exists():
+        raise FileNotFoundError(
+            "client_secrets.json is missing from the project root. "
+            "Download the OAuth client secrets file from Google Cloud Console "
+            "and place it next to app.py."
+        )
+
     gauth = GoogleAuth()
 
     # Try loading saved credentials first
