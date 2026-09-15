@@ -1,5 +1,5 @@
 # 🧹 Data Cleanliness Checker
-# [LINK}(https://datarate-asvfzjemivjbxuep9sjfsk.streamlit.app/)
+# [LINK](https://datarate-asvfzjemivjbxuep9sjfsk.streamlit.app/)
 
 A **Streamlit** web app for instantly auditing and cleaning CSV datasets — from local files or directly from **Google Drive**.
 
