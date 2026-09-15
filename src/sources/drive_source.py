@@ -229,18 +229,11 @@ def render_drive_browser() -> None:
             btn_key = f"drive_item_{item['id']}"
             if is_folder:
                 if st.button("Open", key=btn_key):
-                    # Push current folder to stack and navigate into subfolder
-                    current_id = st.session_state["drive_current_folder_id"]
+                    # Push the folder being entered (id + its own title) onto the stack
                     current_stack = st.session_state["drive_folder_stack"]
-                    # Find current folder title for the stack entry
-                    current_title = current_stack[-1]["title"] if current_stack else "My Drive"
-                    current_stack.append({"id": current_id, "title": current_title})
+                    current_stack.append({"id": item["id"], "title": item["title"]})
                     st.session_state["drive_folder_stack"] = current_stack
                     st.session_state["drive_current_folder_id"] = item["id"]
-                    # Push the entered folder name (we'll get it from item)
-                    # Correct: replace last push with proper title
-                    current_stack[-1] = {"id": current_id, "title": current_title}
-                    # Now push the new folder properly
                     _refresh_listing()
                     st.rerun()
             else:
